@@ -18,6 +18,14 @@ func main() {
 		docker.RunAction(os.Args[2:])
 	case "exec":
 		docker.ExecAction(os.Args[2:])
+	case "images":
+		docker.ListImageAction(os.Args[2:])
+	case "ps":
+		docker.ListContainerAction(os.Args[2:])
+	case "rm":
+		docker.RemoveContainerAction(os.Args[2:])
+	case "rmi":
+		docker.RemoveImageAction(os.Args[2:])
 	default:
 		log.Fatal("undefined command")
 	}

@@ -29,8 +29,10 @@ func (v *Volumes) String() string {
 
 func RunAction(args []string) {
 	var volumes Volumes
+	var name string
 	cmdline := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	cmdline.Var(&volumes, "v", "volumes to mount")
+	cmdline.StringVar(&name, "name", "", "name of container")
 	cmdline.Parse(args)
 	args = cmdline.Args()
 	if len(args) < 2 {
@@ -86,6 +88,7 @@ func RunAction(args []string) {
 	}
 
 	var container_cfg Container
+	container_cfg.Name = name
 	container_cfg.Overlay = make(map[string]string)
 	container_cfg.Overlay["lowerdir"] = lowerdir
 	container_cfg.Overlay["upperdir"] = upperdir

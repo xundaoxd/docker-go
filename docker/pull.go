@@ -37,6 +37,9 @@ func pullImage(arg string) {
 	if err := json.Unmarshal(buf, &manifests_json); err != nil {
 		log.Fatal(err)
 	}
+	if manifests_json["errors"] != nil {
+		log.Fatal(manifests_json["errors"])
+	}
 	for _, layer := range manifests_json["fsLayers"].([]interface{}) {
 		blobSum := layer.(map[string]interface{})["blobSum"].(string)
 		hash := strings.Split(blobSum, ":")

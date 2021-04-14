@@ -16,6 +16,7 @@ type DockerConfig struct {
 }
 
 type Container struct {
+	Name    string
 	Overlay map[string]string
 	Volumes []string
 }
