@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 
 	"github.com/xundaoxd/docker-go/docker"
@@ -9,7 +8,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatal("must specify a command")
+		panic("must specify a command")
 	}
 	switch os.Args[1] {
 	case "pull":
@@ -27,6 +26,6 @@ func main() {
 	case "rmi":
 		docker.RemoveImageAction(os.Args[2:])
 	default:
-		log.Fatal("undefined command")
+		panic("undefined command")
 	}
 }

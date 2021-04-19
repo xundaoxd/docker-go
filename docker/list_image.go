@@ -3,7 +3,6 @@ package docker
 import (
 	"fmt"
 	"io/fs"
-	"log"
 	"path"
 	"path/filepath"
 	"strings"
@@ -14,7 +13,7 @@ import (
 func checkImage(fpath string, d fs.DirEntry, err error) error {
 	m_path := path.Join(fpath, "manifests.json")
 	if utils.IsExist(m_path) {
-		img_path := fpath[len(DockerCfg.DockerRoot)+1:]
+		img_path := fpath[len(docker_cfg.DockerRoot)+1:]
 		idx := strings.LastIndex(img_path, "-")
 		fmt.Printf("%s:%s\n", img_path[:idx], img_path[idx+1:])
 		return fs.SkipDir
@@ -23,7 +22,7 @@ func checkImage(fpath string, d fs.DirEntry, err error) error {
 }
 
 func ListImageAction(args []string) {
-	if err := filepath.WalkDir(DockerCfg.DockerRoot, checkImage); err != nil {
-		log.Fatal(err)
+	if err := filepath.WalkDir(docker_cfg.DockerRoot, checkImage); err != nil {
+		panic(err.Error())
 	}
 }

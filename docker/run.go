@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -36,20 +35,19 @@ func RunAction(args []string) {
 	cmdline.Parse(args)
 	args = cmdline.Args()
 	if len(args) < 2 {
-		log.Fatal("container run error")
+		panic("container run error")
 
 	}
 	for idx, v := range volumes {
 		v_info := strings.Split(v, ":")
 		if len(v_info) != 2 {
-			log.Fatal("mount error: ", v)
-
+			panic("mount error: " + v)
 		}
 		if !strings.HasPrefix(v_info[0], "/") {
 			if abs, err := filepath.Abs(v_info[0]); err == nil {
 				v_info[0] = abs
 			} else {
-				log.Fatal(err)
+				panic(err.Error())
 			}
 			volumes[idx] = strings.Join(v_info, ":")
 		}
@@ -62,28 +60,28 @@ func RunAction(args []string) {
 		img_name = args[0][:idx]
 		img_tag = args[0][idx+1:]
 	}
-	img_root := path.Join(DockerCfg.DockerRoot, img_name+"-"+img_tag)
+	img_root := path.Join(docker_cfg.DockerRoot, img_name+"-"+img_tag)
 	lowerdir := path.Join(img_root, "root")
 
 	container_id := rand.Intn(1000000)
-	for utils.IsExist(path.Join(DockerCfg.ContainerRoot, fmt.Sprintf("%06d", container_id))) {
+	for utils.IsExist(path.Join(docker_cfg.ContainerRoot, fmt.Sprintf("%06d", container_id))) {
 		container_id = rand.Intn(1000000)
 	}
-	container_root := path.Join(DockerCfg.ContainerRoot, fmt.Sprintf("%06d", container_id))
+	container_root := path.Join(docker_cfg.ContainerRoot, fmt.Sprintf("%06d", container_id))
 	container_cfg_path := path.Join(container_root, "config.json")
 	upperdir := path.Join(container_root, "upperdir")
 	if err := os.MkdirAll(upperdir, 0755); err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 
 	}
 	workdir := path.Join(container_root, "workdir")
 	if err := os.MkdirAll(workdir, 0755); err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 
 	}
 	merged := path.Join(container_root, "merged")
 	if err := os.MkdirAll(merged, 0755); err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 
 	}
 
@@ -97,16 +95,16 @@ func RunAction(args []string) {
 	container_cfg.Volumes = volumes
 	if buf, err := json.Marshal(container_cfg); err == nil {
 		if err := ioutil.WriteFile(container_cfg_path, buf, 0644); err != nil {
-			log.Fatal(err)
+			panic(err.Error())
 		}
 	} else {
-		log.Fatal(err)
+		panic(err.Error())
 	}
 	cmd := exec.Command(os.Args[0], append([]string{"exec", fmt.Sprintf("%06d", container_id)}, command...)...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 	}
 }

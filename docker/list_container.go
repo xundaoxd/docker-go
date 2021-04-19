@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 
@@ -18,34 +17,29 @@ func ListContainerAction(args []string) {
 	cmdline.BoolVar(&quiet, "q", false, "")
 	cmdline.Parse(args)
 
-	dir, err := ioutil.ReadDir(DockerCfg.ContainerRoot)
+	dir, err := ioutil.ReadDir(docker_cfg.ContainerRoot)
 	if err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 	}
 	for _, v := range dir {
 		if !v.IsDir() {
 			continue
 		}
-		cfg_path := path.Join(DockerCfg.ContainerRoot, v.Name(), "config.json")
+		cfg_path := path.Join(docker_cfg.ContainerRoot, v.Name(), "config.json")
 		if utils.IsExist(cfg_path) {
-			buf, err := ioutil.ReadFile(cfg_path)
-			if err != nil {
+			var container_cfg Container
+			if buf, err := ioutil.ReadFile(cfg_path); err != nil {
 				continue
-			}
-			var cfg map[string]interface{}
-			if err := json.Unmarshal(buf, &cfg); err != nil {
-				continue
-			}
-			var name string
-			for k, v := range cfg {
-				if k == "Name" {
-					name = v.(string)
+			} else {
+				if err := json.Unmarshal(buf, &container_cfg); err != nil {
+					continue
 				}
 			}
+
 			if quiet {
 				fmt.Printf("%s\n", v.Name())
 			} else {
-				fmt.Printf("Id: %s, Name: %s\n", v.Name(), name)
+				fmt.Printf("Id: %s, Name: %s\n", v.Name(), container_cfg.Name)
 			}
 		}
 	}

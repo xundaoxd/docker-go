@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -17,36 +16,30 @@ import (
 func runSelf(args []string) {
 	root_dir := args[0]
 	command := args[1:]
-	proc_dir := path.Join(root_dir, "proc")
-	if err := os.MkdirAll(proc_dir, 0755); err != nil {
-		log.Fatal(err)
-	}
-	if err := syscall.Mount("proc", proc_dir, "proc", 0, ""); err != nil {
-		log.Println(err)
-		return
-	}
-	defer func() {
-		if err := syscall.Unmount("/proc", 0); err != nil {
-			log.Println(err)
-		}
-	}()
 	if err := syscall.Chroot(root_dir); err != nil {
-		if err := syscall.Unmount(proc_dir, 0); err != nil {
-			log.Fatal(err)
-		}
-		log.Fatal(err)
+		panic(err.Error())
 	}
 	if err := syscall.Chdir("/"); err != nil {
-		log.Println(err)
-		return
+		panic(err.Error())
 	}
-	cmd := exec.Command(command[0], command[1:]...)
+	proc_dir := path.Join("/proc")
+	if err := os.MkdirAll(proc_dir, 0755); err != nil {
+		panic(err.Error())
+	}
+	if err := syscall.Mount("proc", proc_dir, "proc", 0, ""); err != nil {
+		panic(err.Error())
+	}
+	defer func() {
+		if err := syscall.Unmount(proc_dir, 0); err != nil {
+			panic(err.Error())
+		}
+	}()
+	cmd := exec.Command("env", "-i", strings.Join(command, " "))
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		log.Println(err)
-		return
+		panic(err.Error())
 	}
 }
 
@@ -56,55 +49,52 @@ func ExecAction(args []string) {
 		return
 	}
 	if len(args) < 2 {
-		log.Fatal("container run error")
+		panic("container run error")
 
 	}
 	container_id := args[0]
 	command := args[1:]
-	container_root := path.Join(DockerCfg.ContainerRoot, container_id)
+	container_root := path.Join(docker_cfg.ContainerRoot, container_id)
 	container_cfg_path := path.Join(container_root, "config.json")
 	if !utils.IsExist(container_cfg_path) {
-		log.Fatal("container doesn't exist.")
+		panic("container doesn't exist.")
 	}
 	var container_cfg Container
-	buf, err := ioutil.ReadFile(container_cfg_path)
-	if err != nil {
-		log.Fatal(err)
+	if buf, err := ioutil.ReadFile(container_cfg_path); err != nil {
+		panic(err.Error())
+	} else {
+		if err := json.Unmarshal(buf, &container_cfg); err != nil {
+			panic(err.Error())
+		}
 	}
-	if err := json.Unmarshal(buf, &container_cfg); err != nil {
-		log.Fatal(err)
-	}
+
 	lowerdir := container_cfg.Overlay["lowerdir"]
 	upperdir := container_cfg.Overlay["upperdir"]
 	workdir := container_cfg.Overlay["workdir"]
 	merged := container_cfg.Overlay["merged"]
 	if err := syscall.Mount("overlay", merged, "overlay", 0, fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", lowerdir, upperdir, workdir)); err != nil {
-		log.Println(err)
-		return
+		panic(err.Error())
 	}
 	defer func() {
 		if err := syscall.Unmount(merged, 0); err != nil {
-			log.Println(err)
+			panic(err.Error())
 		}
 	}()
 	for _, v := range container_cfg.Volumes {
 		v_info := strings.Split(v, ":")
 		if len(v_info) != 2 {
-			log.Println("mount error: ", v)
-			return
+			panic("mount error: " + v)
 		}
 		target := path.Join(merged, v_info[1])
 		if err := os.MkdirAll(target, 0755); err != nil {
-			log.Println(err)
-			return
+			panic(err.Error())
 		}
 		if err := syscall.Mount(v_info[0], target, "", syscall.MS_BIND, ""); err != nil {
-			log.Println(err)
-			return
+			panic(err.Error())
 		}
 		defer func() {
 			if err := syscall.Unmount(target, 0); err != nil {
-				log.Println(err)
+				panic(err.Error())
 			}
 		}()
 	}
@@ -116,7 +106,6 @@ func ExecAction(args []string) {
 		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWIPC | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS,
 	}
 	if err := cmd.Run(); err != nil {
-		log.Println(err)
-		return
+		panic(err.Error())
 	}
 }

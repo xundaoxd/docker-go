@@ -3,7 +3,6 @@ package docker
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -21,7 +20,7 @@ type Container struct {
 	Volumes []string
 }
 
-var DockerCfg DockerConfig
+var docker_cfg DockerConfig
 
 func init() {
 
@@ -29,24 +28,25 @@ func init() {
 	if DOCKER_ROOT == "" {
 		DOCKER_ROOT = "~/.docker"
 	}
-	// init DockerCfg
-	buf, err := ioutil.ReadFile(path.Join(DOCKER_ROOT, "config.json"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := json.Unmarshal(buf, &DockerCfg); err != nil {
-		log.Fatal(err)
-	}
-	if DockerCfg.DockerRoot == "" {
-		DockerCfg.DockerRoot = DOCKER_ROOT
-	} else if !strings.HasPrefix(DockerCfg.DockerRoot, "/") {
-		DockerCfg.DockerRoot = path.Join(DOCKER_ROOT, DockerCfg.DockerRoot)
+	// init docker_cfg
+	if buf, err := ioutil.ReadFile(path.Join(DOCKER_ROOT, "config.json")); err != nil {
+		panic(err.Error())
+	} else {
+		if err := json.Unmarshal(buf, &docker_cfg); err != nil {
+			panic(err.Error())
+		}
 	}
 
-	if DockerCfg.ContainerRoot == "" {
-		DockerCfg.ContainerRoot = DOCKER_ROOT
-	} else if !strings.HasPrefix(DockerCfg.ContainerRoot, "/") {
-		DockerCfg.ContainerRoot = path.Join(DOCKER_ROOT, DockerCfg.ContainerRoot)
+	if docker_cfg.DockerRoot == "" {
+		docker_cfg.DockerRoot = DOCKER_ROOT
+	} else if !strings.HasPrefix(docker_cfg.DockerRoot, "/") {
+		docker_cfg.DockerRoot = path.Join(DOCKER_ROOT, docker_cfg.DockerRoot)
+	}
+
+	if docker_cfg.ContainerRoot == "" {
+		docker_cfg.ContainerRoot = DOCKER_ROOT
+	} else if !strings.HasPrefix(docker_cfg.ContainerRoot, "/") {
+		docker_cfg.ContainerRoot = path.Join(DOCKER_ROOT, docker_cfg.ContainerRoot)
 	}
 
 }
